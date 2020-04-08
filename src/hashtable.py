@@ -37,8 +37,9 @@ class HashTable:
         '''
         hash = 5381
         for character in str(key):
-            hash = (hash * 33) + ord(character)
-        return hash
+            hash = hash << 3 + ord(character) << 3 #binary and bitshift
+
+        return hash % self.capacity
 
     def _hash_mod(self, key):
         '''
@@ -50,9 +51,9 @@ class HashTable:
 
     def insert(self, key, value):
         #get function
-        hash_func = self._hash_mod(key)
+        hash_func = self._hash_djb2(key)
         #case1: look for key
-        if not self.retrieve(key):
+        if not self.retrieve(key) == None:
             self.remove(key)
         #case2 if empty, use linked_list to insert (key, value)
         if self.storage[hash_func] == None:
@@ -62,51 +63,45 @@ class HashTable:
         #nodeA -nodeA.next> Null
         else:
             node=self.storage[hash_func]
-            while node.next: #iterator until node.next is null, then assign to node.
+            while node.next is not None: #iterator until node.next is null, then assign to node.
                 node=node.next
             node.next=LinkedPair(key,value) #insert at
 
 
-
-
     def remove(self, key):
-        '''
-        Remove the value stored with the given key.
-        Print a warning if the key is not found.
-        Fill this in.
-        '''
-        #nodeA-next> nodeB -next> null
-        hash_func = self._hash_mod(key)
-        #if empty, return Empty
-        if self.storage[hash_func]:
-            return print('Empty')
+        #use the hash function to go straight to index in array.
+        #Cas1 if index in storage is empty then return
+        #case2 if something, loop thought index. found or not found
+        #    case2 If = if key is found middle or end, set previousNode.next to this node next. and set node_prev to this node. set node to node.next
+        #    case3: if key is found at beginning, then this index at sroage will be none.
+        #
+        # headNode -headNext> nodeA -ANext> nodeB -BNext> Null
+        hash_function = self._hash_djb2(key)
+        if self.storage[hash_function]==None:
+            return
         else:
-            node=self.storage[hash_func] #how do we get node?
-            previous_node = None #use this variable to assign node.next
-            #iterator to look for key
-            #case1: find key in middle or end of LL, set previous node to next
-            #case2: if key is at first, remove node
+            node=self.storage[hash_function]
+            prevous_node = None
             while node:
-                if node.key == key:
-                    if previous_node:
-                        previous_node.next = node.next
+                if node.key ==key:
+                    if prevous_node is not None :
+                        prevous_node.next = node.next
                     else:
-                        self.storage[hash_func]
-                previous_node = node
+                        self.storage[hash_function] = None
+
+                prevous_node = node
                 node = node.next
-
-
-
 
     def retrieve(self, key):
         '''
         Retrieve the value stored with the given key.
         Returns None if the key is not found.
         Fill this in.
+        #step 1
         '''
         #use the hash_func to go striaght to index
-        hash_function = self._hash_mod(key)
-        #case1: if storage[index] is empty, then return.
+        hash_function = self._hash_djb2(key)
+        #case1: if mapping of hash_function to index is empty, then return.
         #case2: iterator thought node until we find. then retrieve
         if self.storage[hash_function]==None:
             return None
@@ -117,7 +112,6 @@ class HashTable:
                     return node.value #return value if fond
                 node=node.next
         return None
-
 
     def resize(self):
         '''
